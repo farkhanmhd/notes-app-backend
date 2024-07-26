@@ -1,4 +1,4 @@
-interface INote {
+export interface INote {
   id: string;
   title: string;
   createdAt: string;
@@ -7,4 +7,8 @@ interface INote {
   body: string;
 }
 
-export default INote;
+export interface INotePayload {
+  title: string;
+  tags: string[];
+  body: string;
+}
