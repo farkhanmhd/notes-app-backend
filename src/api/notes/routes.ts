@@ -1,4 +1,4 @@
-import NotesHandler from "./handler"
+import NotesHandler from './handler';
 
 const routes = (handler: NotesHandler) => [
   {
@@ -26,6 +26,6 @@ const routes = (handler: NotesHandler) => [
     path: '/notes/{id}',
     handler: handler.deleteNoteByIdHandler,
   },
-]
+];
 
-export default routes
+export default routes;

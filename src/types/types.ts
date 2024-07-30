@@ -1,10 +1,10 @@
 export interface INote {
   id: string;
   title: string;
+  body: string;
+  tags: string[];
   createdAt: string;
   updatedAt: string;
-  tags: string[];
-  body: string;
 }
 
 export interface INotePayload {

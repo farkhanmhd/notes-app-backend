@@ -1,3 +1,5 @@
 node_modules
-notes-api-webserver.pem
+MyEC2KeyPair.pem
 dist
+.env
+.prod.env

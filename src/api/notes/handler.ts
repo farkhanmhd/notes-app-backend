@@ -1,5 +1,5 @@
 import { Request, ResponseToolkit } from '@hapi/hapi';
-import NotesService from 'src/services/inMemory/NotesService';
+import NotesService from 'src/services/postgres/NotesService';
 import NotesValidator from 'src/validator/notes';
 import { INotePayload } from 'src/types/types';
 
@@ -19,10 +19,10 @@ export default class NotesHandler {
     this.deleteNoteByIdHandler = this.deleteNoteByIdHandler.bind(this);
   }
 
-  postNoteHandler(request: Request, h: ResponseToolkit) {
+  async postNoteHandler(request: Request, h: ResponseToolkit) {
     this._validator.validateNotePayload(request.payload as INotePayload);
     const { title = 'untitled', body, tags } = request.payload as INotePayload;
-    const noteId = this._service.addNote({ title, body, tags });
+    const noteId = await this._service.addNote({ title, body, tags });
 
     const response = h.response({
       status: 'success',
@@ -36,17 +36,17 @@ export default class NotesHandler {
     return response;
   }
 
-  getNotesHandler() {
-    const notes = this._service.getNotes();
+  async getNotesHandler() {
+    const notes = await this._service.getNotes();
     return {
       status: 'success',
       data: { notes },
     };
   }
 
-  getNoteByIdHandler(request: Request) {
+  async getNoteByIdHandler(request: Request) {
     const { id } = request.params;
-    const note = this._service.getNoteById(id);
+    const note = await this._service.getNoteById(id);
 
     return {
       status: 'success',
@@ -54,11 +54,11 @@ export default class NotesHandler {
     };
   }
 
-  putNoteByIdHandler(request: Request) {
+  async putNoteByIdHandler(request: Request) {
     this._validator.validateNotePayload(request.payload as INotePayload);
     const { id } = request.params;
 
-    this._service.editNoteById(id, request.payload as INotePayload);
+    await this._service.editNoteById(id, request.payload as INotePayload);
 
     return {
       status: 'success',
@@ -66,9 +66,9 @@ export default class NotesHandler {
     };
   }
 
-  deleteNoteByIdHandler(request: Request) {
+  async deleteNoteByIdHandler(request: Request) {
     const { id } = request.params;
-    this._service.deleteNoteById(id);
+    await this._service.deleteNoteById(id);
 
     return {
       status: 'success',

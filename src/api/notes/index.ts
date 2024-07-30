@@ -1,5 +1,5 @@
 import { Server, ServerRoute } from '@hapi/hapi';
-import NotesService from 'src/services/inMemory/NotesService';
+import NotesService from 'src/services/postgres/NotesService';
 import NotesValidator from 'src/validator/notes';
 import NotesHandler from './handler';
 import routes from './routes';
