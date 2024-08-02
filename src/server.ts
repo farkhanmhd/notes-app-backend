@@ -4,11 +4,15 @@ import notes from './api/notes/index';
 import NotesValidator from './validator/notes';
 import ClientError from './exceptions/ClientError';
 import NotesService from './services/postgres/NotesService';
+import users from './api/users';
+import UsersValidator from './validator/users';
+import UsersService from './services/postgres/UsersService';
 
 dotenv.config();
 
 const init = async () => {
   const notesService = new NotesService();
+  const usersService = new UsersService();
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -20,13 +24,22 @@ const init = async () => {
     },
   });
 
-  await server.register({
-    plugin: notes,
-    options: {
-      service: notesService,
-      validator: NotesValidator,
+  await server.register([
+    {
+      plugin: notes,
+      options: {
+        service: notesService,
+        validator: NotesValidator,
+      },
     },
-  });
+    {
+      plugin: users,
+      options: {
+        service: usersService,
+        validator: UsersValidator,
+      },
+    },
+  ]);
 
   server.ext(
     'onPreResponse',

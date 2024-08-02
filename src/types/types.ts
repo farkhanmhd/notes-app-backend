@@ -12,3 +12,9 @@ export interface INotePayload {
   tags: string[];
   body: string;
 }
+
+export interface IUser {
+  username: string;
+  password: string;
+  fullname: string;
+}
