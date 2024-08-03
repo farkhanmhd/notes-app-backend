@@ -11,6 +11,7 @@ export interface INotePayload {
   title: string;
   tags: string[];
   body: string;
+  owner: string;
 }
 
 export interface IUser {

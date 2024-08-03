@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid';
 import { Pool } from 'pg';
 import { INotePayload } from 'src/types/types';
 import NotFoundError from '../../exceptions/NotFoundError';
+import AuthorizationError from '../../exceptions/AuthorizationError';
 import mapDBToModel from '../../utils/index';
 
 export default class NotesService {
@@ -9,24 +10,35 @@ export default class NotesService {
 
   constructor() {
     this._pool = new Pool();
+
+    this.addNote = this.addNote.bind(this);
+    this.getNotes = this.getNotes.bind(this);
+    this.getNoteById = this.getNoteById.bind(this);
+    this.editNoteById = this.editNoteById.bind(this);
+    this.deleteNoteById = this.deleteNoteById.bind(this);
+    this.verifyNoteOwner = this.verifyNoteOwner.bind(this);
   }
 
-  async addNote({ title, body, tags }: INotePayload) {
+  async addNote({ title, body, tags, owner }: INotePayload) {
     const id = nanoid(16);
     const createdAt = new Date().toISOString();
     const updatedAt = createdAt;
 
     const query = {
-      text: 'INSERT INTO notes VALUES($1, $2, $3, $4, $5, $6) RETURNING id',
-      values: [id, title, body, tags, createdAt, updatedAt],
+      text: 'INSERT INTO notes VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      values: [id, title, body, tags, createdAt, updatedAt, owner],
     };
 
     const result = await this._pool.query(query);
     return result.rows[0].id;
   }
 
-  async getNotes() {
-    const result = await this._pool.query('SELECT * FROM notes');
+  async getNotes(owner: string) {
+    const query = {
+      text: 'SELECT * FROM notes WHERE owner = $1',
+      values: [owner],
+    };
+    const result = await this._pool.query(query);
     return result.rows.map(mapDBToModel);
   }
 
@@ -69,6 +81,25 @@ export default class NotesService {
 
     if (!result.rows.length) {
       throw new NotFoundError('Catatan gagal dihapus. Id tidak ditemukan');
+    }
+  }
+
+  async verifyNoteOwner(id: string, owner: string) {
+    const query = {
+      text: 'SELECT * FROM notes WHERE id = $1',
+      values: [id],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Catatan tidak ditemukan');
+    }
+
+    const note = result.rows[0];
+
+    if (note.owner !== owner) {
+      throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
     }
   }
 }

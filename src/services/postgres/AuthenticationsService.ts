@@ -35,7 +35,6 @@ export default class AuthenticationsService {
   }
 
   async deleteRefreshToken(token: string) {
-    console.log(token);
     const query = {
       text: 'DELETE FROM authentications WHERE token = $1',
       values: [token],
