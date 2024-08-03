@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { IUser } from 'src/types/types';
 import InvariantError from '../../exceptions/InvariantError';
 import NotFoundError from '../../exceptions/NotFoundError';
+import AuthenticationError from '../../exceptions/AuthenticationError';
 
 export default class UsersService {
   private _pool: Pool;
@@ -14,6 +15,7 @@ export default class UsersService {
     this.addUser = this.addUser.bind(this);
     this.verifyNewUsername = this.verifyNewUsername.bind(this);
     this.getUserById = this.getUserById.bind(this);
+    this.verifyUserCredential = this.verifyUserCredential.bind(this);
   }
 
   async addUser({ username, password, fullname }: IUser) {
@@ -64,5 +66,27 @@ export default class UsersService {
     }
 
     return result.rows[0];
+  }
+
+  async verifyUserCredential(username: string, password: string) {
+    const query = {
+      text: 'SELECT id, password FROM users WHERE username = $1',
+      values: [username],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new AuthenticationError('Kredensial yang Anda berikan salah');
+    }
+
+    const { id, password: hashedPassword } = result.rows[0];
+
+    const match = await bcrypt.compare(password, hashedPassword);
+
+    if (!match) {
+      throw new AuthenticationError('Kredensial yang Anda berikan salah');
+    }
+    return id;
   }
 }

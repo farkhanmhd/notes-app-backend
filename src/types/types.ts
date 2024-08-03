@@ -18,3 +18,8 @@ export interface IUser {
   password: string;
   fullname: string;
 }
+
+export interface IAuthPayload {
+  username: string;
+  password: string;
+}
