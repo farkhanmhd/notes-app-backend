@@ -4,12 +4,16 @@ import { INotePayload } from 'src/types/types';
 import NotFoundError from '../../exceptions/NotFoundError';
 import AuthorizationError from '../../exceptions/AuthorizationError';
 import mapDBToModel from '../../utils/index';
+import CollaborationsService from './CollaborationsService';
 
 export default class NotesService {
   private _pool: Pool;
 
-  constructor() {
+  private _collaborationService: CollaborationsService;
+
+  constructor(collaborationService: CollaborationsService) {
     this._pool = new Pool();
+    this._collaborationService = collaborationService;
 
     this.addNote = this.addNote.bind(this);
     this.getNotes = this.getNotes.bind(this);
@@ -17,10 +21,11 @@ export default class NotesService {
     this.editNoteById = this.editNoteById.bind(this);
     this.deleteNoteById = this.deleteNoteById.bind(this);
     this.verifyNoteOwner = this.verifyNoteOwner.bind(this);
+    this.verifyNoteAccess = this.verifyNoteAccess.bind(this);
   }
 
   async addNote({ title, body, tags, owner }: INotePayload) {
-    const id = nanoid(16);
+    const id = `note-${nanoid(16)}`;
     const createdAt = new Date().toISOString();
     const updatedAt = createdAt;
 
@@ -35,7 +40,10 @@ export default class NotesService {
 
   async getNotes(owner: string) {
     const query = {
-      text: 'SELECT * FROM notes WHERE owner = $1',
+      text: `SELECT notes.* FROM notes
+      LEFT JOIN collaborations ON collaborations.note_id = notes.id
+      WHERE notes.owner = $1 OR collaborations.user_id = $1
+      GROUP BY notes.id`,
       values: [owner],
     };
     const result = await this._pool.query(query);
@@ -44,7 +52,10 @@ export default class NotesService {
 
   async getNoteById(id: string) {
     const query = {
-      text: 'SELECT * FROM notes WHERE id = $1',
+      text: `SELECT notes.*, users.username
+      FROM notes
+      LEFT JOIN users ON users.id = notes.owner
+      WHERE notes.id = $1`,
       values: [id],
     };
 
@@ -100,6 +111,21 @@ export default class NotesService {
 
     if (note.owner !== owner) {
       throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
+    }
+  }
+
+  async verifyNoteAccess(noteId: string, userId: string) {
+    try {
+      await this.verifyNoteOwner(noteId, userId);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      try {
+        await this._collaborationService.verifyCollaborator(noteId, userId);
+      } catch {
+        throw error;
+      }
     }
   }
 }

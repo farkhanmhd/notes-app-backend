@@ -2,6 +2,7 @@ import { Request, ResponseToolkit } from '@hapi/hapi';
 import UsersService from 'src/services/postgres/UsersService';
 import UsersValidator from 'src/validator/users';
 import { IUser } from 'src/types/types';
+import ClientError from '../../exceptions/ClientError';
 
 export default class UsersHandler {
   private _service;
@@ -14,6 +15,7 @@ export default class UsersHandler {
 
     this.postUserHandler = this.postUserHandler.bind(this);
     this.getUserByIdHandler = this.getUserByIdHandler.bind(this);
+    this.getUsersByUsernameHandler = this.getUsersByUsernameHandler.bind(this);
   }
 
   async postUserHandler(request: Request, h: ResponseToolkit) {
@@ -44,5 +46,38 @@ export default class UsersHandler {
       status: 'success',
       data: { user },
     };
+  }
+
+  async getUsersByUsernameHandler(request: Request, h: ResponseToolkit) {
+    try {
+      const { username = '' } = request.query;
+      const users = await this._service.getUsersByUsername(username);
+
+      return {
+        status: 'success',
+        data: {
+          users,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ClientError) {
+        const response = h.response({
+          status: 'fail',
+          message: error.message,
+        });
+        response.code(error.statusCode);
+        return response;
+      }
+
+      // Server ERROR!
+      const response = h.response({
+        status: 'error',
+        message: 'Maaf, terjadi kegagalan pada server kami.',
+      });
+
+      response.code(500);
+      console.error(error);
+      return response;
+    }
   }
 }

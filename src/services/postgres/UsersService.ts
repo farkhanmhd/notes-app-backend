@@ -16,6 +16,7 @@ export default class UsersService {
     this.verifyNewUsername = this.verifyNewUsername.bind(this);
     this.getUserById = this.getUserById.bind(this);
     this.verifyUserCredential = this.verifyUserCredential.bind(this);
+    this.getUsersByUsername = this.getUsersByUsername.bind(this);
   }
 
   async addUser({ username, password, fullname }: IUser) {
@@ -88,5 +89,15 @@ export default class UsersService {
       throw new AuthenticationError('Kredensial yang Anda berikan salah');
     }
     return id;
+  }
+
+  async getUsersByUsername(username: string) {
+    const query = {
+      text: 'SELECT id, username, fullname FROM users WHERE username LIKE $1',
+      values: [`%${username}%`],
+    };
+
+    const result = await this._pool.query(query);
+    return result.rows;
   }
 }

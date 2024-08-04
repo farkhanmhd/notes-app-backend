@@ -7,6 +7,7 @@ const mapDBToModel = ({
   tags,
   createdAt,
   updatedAt,
+  username,
 }: INote) => ({
   id,
   title,
@@ -14,6 +15,7 @@ const mapDBToModel = ({
   tags,
   createdAt,
   updatedAt,
+  username,
 });
 
 export default mapDBToModel;

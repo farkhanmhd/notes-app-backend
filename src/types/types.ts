@@ -5,6 +5,7 @@ export interface INote {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  username: string;
 }
 
 export interface INotePayload {
