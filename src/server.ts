@@ -15,6 +15,9 @@ import TokenManager from './tokenize/TokenManager';
 import collaborations from './api/collaborations';
 import CollaborationsService from './services/postgres/CollaborationsService';
 import CollaborationsValidator from './validator/collaborations';
+import exportsPlugin from './api/exports';
+import ProducerService from './services/rabbitmq/ProducerService';
+import ExportsValidator from './validator/exports';
 
 dotenv.config();
 
@@ -86,6 +89,13 @@ const init = async () => {
         collaborationsService,
         notesService,
         validator: CollaborationsValidator,
+      },
+    },
+    {
+      plugin: exportsPlugin,
+      options: {
+        service: ProducerService,
+        validator: ExportsValidator,
       },
     },
   ]);
