@@ -3,3 +3,4 @@ MyEC2KeyPair.pem
 dist
 .env
 .prod.env
+src/api/uploads/file
