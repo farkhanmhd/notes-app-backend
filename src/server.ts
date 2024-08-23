@@ -2,7 +2,6 @@ import Hapi from '@hapi/hapi';
 import Jwt from '@hapi/jwt';
 import inert from '@hapi/inert';
 import dotenv from 'dotenv';
-import path from 'path';
 import ClientError from './exceptions/ClientError';
 import notes from './api/notes/index';
 import NotesValidator from './validator/notes';
@@ -21,7 +20,7 @@ import exportsPlugin from './api/exports';
 import ProducerService from './services/rabbitmq/ProducerService';
 import ExportsValidator from './validator/exports';
 import uploads from './api/uploads';
-import StorageService from './services/storage/StorageService';
+import StorageService from './services/S3/StorageService';
 import UploadsValidator from './validator/uploads';
 
 dotenv.config();
@@ -31,9 +30,7 @@ const init = async () => {
   const notesService = new NotesService(collaborationsService);
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
-  const storageService = new StorageService(
-    path.resolve(__dirname, 'api/uploads/file/images')
-  );
+  const storageService = new StorageService();
 
   const server = Hapi.server({
     port: process.env.PORT,
