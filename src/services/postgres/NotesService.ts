@@ -1,19 +1,26 @@
-import { nanoid } from 'nanoid';
 import { Pool } from 'pg';
+import { nanoid } from 'nanoid';
 import { INotePayload } from 'src/types/types';
 import NotFoundError from '../../exceptions/NotFoundError';
 import AuthorizationError from '../../exceptions/AuthorizationError';
 import mapDBToModel from '../../utils/index';
 import CollaborationsService from './CollaborationsService';
+import CacheService from '../redis/CacheService';
 
 export default class NotesService {
   private _pool: Pool;
 
   private _collaborationService: CollaborationsService;
 
-  constructor(collaborationService: CollaborationsService) {
+  private _cacheService: CacheService;
+
+  constructor(
+    collaborationService: CollaborationsService,
+    cacheService: CacheService
+  ) {
     this._pool = new Pool();
     this._collaborationService = collaborationService;
+    this._cacheService = cacheService;
 
     this.addNote = this.addNote.bind(this);
     this.getNotes = this.getNotes.bind(this);
@@ -35,19 +42,31 @@ export default class NotesService {
     };
 
     const result = await this._pool.query(query);
+    await this._cacheService.delete(`notes:${owner}`);
     return result.rows[0].id;
   }
 
   async getNotes(owner: string) {
-    const query = {
-      text: `SELECT notes.* FROM notes
+    try {
+      // getting data from cache
+      const result = await this._cacheService.get(`notes:${owner}`);
+      return JSON.parse(result);
+    } catch (error) {
+      const query = {
+        text: `SELECT notes.* FROM notes
       LEFT JOIN collaborations ON collaborations.note_id = notes.id
       WHERE notes.owner = $1 OR collaborations.user_id = $1
       GROUP BY notes.id`,
-      values: [owner],
-    };
-    const result = await this._pool.query(query);
-    return result.rows.map(mapDBToModel);
+        values: [owner],
+      };
+      const result = await this._pool.query(query);
+      const mappedResult = result.rows.map(mapDBToModel);
+      await this._cacheService.set(
+        `notes:${owner}`,
+        JSON.stringify(mappedResult)
+      );
+      return mappedResult;
+    }
   }
 
   async getNoteById(id: string) {
@@ -80,6 +99,9 @@ export default class NotesService {
     if (!result.rows.length) {
       throw new NotFoundError('Gagal memperbarui catatan. Id tidak ditemukan');
     }
+
+    const { owner } = result.rows[0];
+    await this._cacheService.delete(`notes:${owner}`);
   }
 
   async deleteNoteById(id: string) {
@@ -93,6 +115,9 @@ export default class NotesService {
     if (!result.rows.length) {
       throw new NotFoundError('Catatan gagal dihapus. Id tidak ditemukan');
     }
+
+    const { owner } = result.rows[0];
+    await this._cacheService.delete(`notes:${owner}`);
   }
 
   async verifyNoteOwner(id: string, owner: string) {

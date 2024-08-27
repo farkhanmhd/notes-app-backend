@@ -1,12 +1,16 @@
 import { Pool } from 'pg';
 import { nanoid } from 'nanoid';
+import CacheService from '../redis/CacheService';
 import InvariantError from '../../exceptions/InvariantError';
 
 export default class CollaborationsService {
   private _pool: Pool;
 
-  constructor() {
+  private _cacheService: CacheService;
+
+  constructor(cacheService: CacheService) {
     this._pool = new Pool();
+    this._cacheService = cacheService;
 
     this.addCollaboration = this.addCollaboration.bind(this);
     this.deleteCollaboration = this.deleteCollaboration.bind(this);
@@ -27,6 +31,8 @@ export default class CollaborationsService {
       throw new InvariantError('Kolaborasi gagal ditambahkan');
     }
 
+    await this._cacheService.delete(`notes:${userId}`);
+
     return result.rows[0].id;
   }
 
@@ -41,6 +47,8 @@ export default class CollaborationsService {
     if (!result.rows.length) {
       throw new InvariantError('Kolaborasi gagal dihapus');
     }
+
+    await this._cacheService.delete(`notes:${userId}`);
   }
 
   async verifyCollaborator(noteId: string, userId: string) {

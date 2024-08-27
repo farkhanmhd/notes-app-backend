@@ -1,0 +1,2 @@
+pm2 start npm --name "notes-api" -- run "dev"
+pm2 start dist/consumer.js --name "notes-app-consumer"

@@ -4,9 +4,9 @@ import NotesValidator from 'src/validator/notes';
 import { INotePayload } from 'src/types/types';
 
 export default class NotesHandler {
-  private _service;
+  private _service: NotesService;
 
-  private _validator;
+  private _validator: typeof NotesValidator;
 
   constructor(service: NotesService, validator: typeof NotesValidator) {
     this._service = service;
